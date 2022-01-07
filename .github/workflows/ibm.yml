@@ -24,7 +24,7 @@ env:
   REGISTRY_HOSTNAME: us.icr.io
   IMAGE_NAME: abhimanyukolakotla/news_backend
   IKS_CLUSTER: c7c294bf0m6i6g3vfp2g
-  DEPLOYMENT_NAME: news_backend-deployment
+  DEPLOYMENT_NAME: news-backend-deployment
   PORT: 3000
 
 jobs:
