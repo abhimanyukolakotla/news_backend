@@ -5,6 +5,8 @@ metadata:
 spec:
   selector:
     app: news-backend
+  type: NodePort
   ports:
   - port: 3000
     targetPort: 3000
+    nodePort: 30000
