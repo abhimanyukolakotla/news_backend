@@ -9,9 +9,11 @@
 name: Build and Deploy to IKS
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Docker Image CI"]
+    branches: [main]
+    types:
+      - completed
 
 # Environment variables available to all jobs and steps in this workflow
 env:
