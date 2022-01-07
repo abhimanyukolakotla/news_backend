@@ -35,4 +35,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: abhimanyukolakotla/news_backend:v1
+          tags: abhimanyukolakotla/news_backend:latest
