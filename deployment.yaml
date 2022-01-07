@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: news-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: news-backend
+  template:
+    metadata:
+      labels:
+        app: news-backend
+    spec:
+      containers:
+      - name: news-backend
+        image: abhimanyukolakotla/news_backend:latest
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+        ports:
+        - containerPort: 3000
