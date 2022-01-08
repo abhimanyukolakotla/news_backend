@@ -9,11 +9,9 @@
 name: Build and Deploy to IKS
 
 on:
-  workflow_run:
-    workflows: ["Docker Image CI"]
-    branches: [main]
-    types:
-      - completed
+  push:
+    branches:
+      - main
 
 # Environment variables available to all jobs and steps in this workflow
 env:
@@ -22,9 +20,9 @@ env:
   IBM_CLOUD_REGION: us-south
   ICR_NAMESPACE: ${{ secrets.ICR_NAMESPACE }}
   REGISTRY_HOSTNAME: us.icr.io
-  IMAGE_NAME: abhimanyukolakotla/news_backend
+  IMAGE_NAME: news-backend
   IKS_CLUSTER: c7c294bf0m6i6g3vfp2g
-  DEPLOYMENT_NAME: news-backend
+  DEPLOYMENT_NAME: news-backend-deployment
   PORT: 3000
 
 jobs:
@@ -45,27 +43,35 @@ jobs:
         ibmcloud config --check-version=false
         ibmcloud plugin install -f kubernetes-service
         ibmcloud plugin install -f container-registry
+
     # Authenticate with IBM Cloud CLI
     - name: Authenticate with IBM Cloud CLI
       run: |
         ibmcloud login --apikey "${IBM_CLOUD_API_KEY}" -r "${IBM_CLOUD_REGION}" -g Default
         ibmcloud cr region-set "${IBM_CLOUD_REGION}"
         ibmcloud cr login
+
     # Build the Docker image
     - name: Build with Docker
       run: |
         docker build -t "$REGISTRY_HOSTNAME"/"$ICR_NAMESPACE"/"$IMAGE_NAME":"$GITHUB_SHA" \
           --build-arg GITHUB_SHA="$GITHUB_SHA" \
           --build-arg GITHUB_REF="$GITHUB_REF" .
+
     # Push the image to IBM Container Registry
     - name: Push the image to ICR
       run: |
         docker push $REGISTRY_HOSTNAME/$ICR_NAMESPACE/$IMAGE_NAME:$GITHUB_SHA
+
     # Deploy the Docker image to the IKS cluster
     - name: Deploy to IKS
       run: |
         ibmcloud ks cluster config --cluster $IKS_CLUSTER
         kubectl config current-context
+        kubectl create deployment $DEPLOYMENT_NAME --image=$REGISTRY_HOSTNAME/$ICR_NAMESPACE/$IMAGE_NAME:$GITHUB_SHA --replicas=3 --dry-run=client -o yaml > deployment.yaml
         kubectl apply -f deployment.yaml
-        kubectl apply -f services.yaml
+        kubectl rollout status deployment/$DEPLOYMENT_NAME
+        kubectl delete service $DEPLOYMENT_NAME --ignore-not-found=true
+        kubectl create service nodeport $DEPLOYMENT_NAME --tcp=$PORT:$PORT --node-port=30001 --dry-run=client -o yaml > service.yaml
+        kubectl apply -f service.yaml
         kubectl get services -o wide
